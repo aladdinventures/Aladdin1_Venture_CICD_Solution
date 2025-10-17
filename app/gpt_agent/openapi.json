@@ -1,0 +1,497 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "RenovAI Canada API",
+        "description": "Smart Renovation Cost & Timeline Estimator for Greater Vancouver Area",
+        "version": "1.0.0 (MVP)"
+    },
+    "paths": {
+        "/api/estimate": {
+            "post": {
+                "tags": [
+                    "Estimation"
+                ],
+                "summary": "Get Estimate",
+                "description": "Calculate renovation cost and timeline estimate.\n\nArgs:\n    request: EstimateRequest containing project details\n\nReturns:\n    EstimateResponse with calculated estimates\n\nRaises:\n    HTTPException: If estimation data is not available",
+                "operationId": "get_estimate_api_estimate_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EstimateRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EstimateResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/project-types": {
+            "get": {
+                "tags": [
+                    "Estimation"
+                ],
+                "summary": "Get Project Types",
+                "description": "Get list of available project types.\n\nReturns:\n    Dictionary containing list of project types",
+                "operationId": "get_project_types_api_project_types_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/finish-levels": {
+            "get": {
+                "tags": [
+                    "Estimation"
+                ],
+                "summary": "Get Finish Levels",
+                "description": "Get list of available finish levels.\n\nReturns:\n    Dictionary containing list of finish levels",
+                "operationId": "get_finish_levels_api_finish_levels_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/collect-lead": {
+            "post": {
+                "tags": [
+                    "Lead Collection"
+                ],
+                "summary": "Collect Lead",
+                "description": "Collect and store lead information.\n\nArgs:\n    request: LeadRequest containing customer information\n\nReturns:\n    LeadResponse with storage confirmation\n\nRaises:\n    HTTPException: If lead storage fails",
+                "operationId": "collect_lead_api_collect_lead_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LeadRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LeadResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/leads/count": {
+            "get": {
+                "tags": [
+                    "Lead Collection"
+                ],
+                "summary": "Get Leads Count",
+                "description": "Get the total number of leads stored (for testing/monitoring).\n\nReturns:\n    Dictionary with lead count",
+                "operationId": "get_leads_count_api_leads_count_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/": {
+            "get": {
+                "summary": "Root",
+                "description": "Root endpoint with API information.",
+                "operationId": "root__get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "summary": "Health Check",
+                "description": "Health check endpoint for monitoring.",
+                "operationId": "health_check_health_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/info": {
+            "get": {
+                "summary": "Api Info",
+                "description": "Detailed API information for Custom GPT integration.",
+                "operationId": "api_info_api_info_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "EstimateRequest": {
+                "properties": {
+                    "project_type": {
+                        "type": "string",
+                        "title": "Project Type",
+                        "description": "Type of renovation project"
+                    },
+                    "size_sqft": {
+                        "type": "number",
+                        "exclusiveMinimum": 0.0,
+                        "title": "Size Sqft",
+                        "description": "Size of the project in square feet"
+                    },
+                    "finish_level": {
+                        "type": "string",
+                        "title": "Finish Level",
+                        "description": "Quality level: basic, standard, or premium"
+                    },
+                    "postal_code": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Postal Code",
+                        "description": "Postal code for location-based adjustments"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "project_type",
+                    "size_sqft",
+                    "finish_level"
+                ],
+                "title": "EstimateRequest",
+                "description": "Request model for renovation estimation."
+            },
+            "EstimateResponse": {
+                "properties": {
+                    "project_type": {
+                        "type": "string",
+                        "title": "Project Type"
+                    },
+                    "size_sqft": {
+                        "type": "number",
+                        "title": "Size Sqft"
+                    },
+                    "finish_level": {
+                        "type": "string",
+                        "title": "Finish Level"
+                    },
+                    "estimated_cost": {
+                        "type": "number",
+                        "title": "Estimated Cost"
+                    },
+                    "estimated_cost_range": {
+                        "type": "object",
+                        "title": "Estimated Cost Range"
+                    },
+                    "estimated_timeline_weeks": {
+                        "type": "integer",
+                        "title": "Estimated Timeline Weeks"
+                    },
+                    "cost_per_sqft": {
+                        "type": "number",
+                        "title": "Cost Per Sqft"
+                    },
+                    "suggested_materials": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Suggested Materials"
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "Description"
+                    },
+                    "location": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Location"
+                    },
+                    "disclaimer": {
+                        "type": "string",
+                        "title": "Disclaimer",
+                        "default": "This is an approximate estimate. Final costs may vary based on specific requirements, site conditions, and material selections. A detailed consultation is recommended for accurate pricing."
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "project_type",
+                    "size_sqft",
+                    "finish_level",
+                    "estimated_cost",
+                    "estimated_cost_range",
+                    "estimated_timeline_weeks",
+                    "cost_per_sqft",
+                    "suggested_materials",
+                    "description"
+                ],
+                "title": "EstimateResponse",
+                "description": "Response model for renovation estimation."
+            },
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
+            "LeadRequest": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "minLength": 2,
+                        "title": "Name",
+                        "description": "Customer's full name"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "title": "Email",
+                        "description": "Customer's email address"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "minLength": 10,
+                        "title": "Phone",
+                        "description": "Customer's phone number"
+                    },
+                    "project_type": {
+                        "type": "string",
+                        "title": "Project Type",
+                        "description": "Type of renovation project"
+                    },
+                    "size_sqft": {
+                        "anyOf": [
+                            {
+                                "type": "number",
+                                "exclusiveMinimum": 0.0
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Size Sqft",
+                        "description": "Project size in square feet"
+                    },
+                    "finish_level": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Finish Level",
+                        "description": "Desired finish level"
+                    },
+                    "postal_code": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Postal Code",
+                        "description": "Project location postal code"
+                    },
+                    "estimated_cost": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Estimated Cost",
+                        "description": "Estimated cost from previous calculation"
+                    },
+                    "project_notes": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 1000
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Project Notes",
+                        "description": "Additional notes or requirements"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "name",
+                    "email",
+                    "phone",
+                    "project_type"
+                ],
+                "title": "LeadRequest",
+                "description": "Request model for lead collection."
+            },
+            "LeadResponse": {
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "title": "Success"
+                    },
+                    "message": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "record_id": {
+                        "type": "string",
+                        "title": "Record Id"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "title": "Created At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "success",
+                    "message",
+                    "record_id",
+                    "created_at"
+                ],
+                "title": "LeadResponse",
+                "description": "Response model for lead collection."
+            },
+            "ValidationError": {
+                "properties": {
+                    "loc": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Location"
+                    },
+                    "msg": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Error Type"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "title": "ValidationError"
+            }
+        }
+    }
+}

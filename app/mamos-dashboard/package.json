@@ -1,0 +1,14 @@
+{
+  "name": "mamos-dashboard",
+  "version": "1.0.0",
+  "description": "MAMOS Dashboard placeholder",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"No tests specified\" && exit 0",
+    "build": "echo \"Building mamos-dashboard\"",
+    "start": "echo \"Starting mamos-dashboard\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

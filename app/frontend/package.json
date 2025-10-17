@@ -1,0 +1,14 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"No tests specified\" && exit 0",
+    "build": "echo \"Building frontend\"",
+    "start": "echo \"Starting frontend\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

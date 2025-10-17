@@ -1,0 +1,70 @@
+// Copyright (c) 2025 Saeed Alaediny
+// This file is part of MAMOS (Manus Agent Management & Orchestration System)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Agent {
+  id           String   @id @default(uuid())
+  hostname     String   @unique
+  os           String
+  cpuCores     Int
+  ramTotal     Int
+  ramUsed      Int
+  status       String   @default("offline") // online, offline
+  lastHeartbeat DateTime @default(now())
+  registeredAt DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  jobs         Job[]
+}
+
+model Job {
+  id          String   @id @default(uuid())
+  commandId   String   // e.g., "echo", "uname", "uptime"
+  args        String?  // JSON string of arguments
+  status      String   @default("pending") // pending, running, completed, failed
+  output      String?
+  error       String?
+  createdAt   DateTime @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  
+  agentId     String
+  agent       Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  
+  logs        JobLog[]
+}
+
+model JobLog {
+  id        String   @id @default(uuid())
+  message   String
+  level     String   @default("info") // info, warning, error
+  timestamp DateTime @default(now())
+  
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+}
+
+model RegistrationToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+

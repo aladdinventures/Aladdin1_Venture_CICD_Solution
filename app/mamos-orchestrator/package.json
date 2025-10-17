@@ -1,0 +1,14 @@
+{
+  "name": "mamos-orchestrator",
+  "version": "1.0.0",
+  "description": "MAMOS Orchestrator placeholder",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"No tests specified\" && exit 0",
+    "build": "echo \"Building mamos-orchestrator\"",
+    "start": "echo \"Starting mamos-orchestrator\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
