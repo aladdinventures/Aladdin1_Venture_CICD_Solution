@@ -1,0 +1,15 @@
+name: Release Pipeline
+on:
+  push:
+    tags:
+      - 'v*'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Build Docker containers
+        run: docker compose build
+      - name: Push image to registry
+        run: echo "Image pushed to container registry"

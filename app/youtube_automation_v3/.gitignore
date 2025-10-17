@@ -1,0 +1,54 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.so
+*.egg-info/
+build/
+dist/
+
+# --- Virtualenv ---
+venv/
+.env/
+.env.local
+.env.*.local
+
+# --- Logs ---
+logs/
+*.log
+*.out
+*.err
+
+# --- Docker ---
+docker-compose.override.yml
+.docker/
+*.pid
+
+# --- IDEs & Tools ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- System Files ---
+.DS_Store
+Thumbs.db
+
+# --- Node.js (Frontend) ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# --- Test artifacts ---
+coverage/
+pytest_cache/
+htmlcov/
+
+# --- Other temporary files ---
+*.bak
+*.tmp
+*.old

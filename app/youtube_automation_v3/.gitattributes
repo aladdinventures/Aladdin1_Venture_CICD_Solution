@@ -1,0 +1,17 @@
+# Normalize text files to LF (Linux/Mac standard)
+* text=auto eol=lf
+
+# Treat shell scripts as text
+*.sh text eol=lf
+
+# Treat markdown and docs as UTF-8 text
+*.md text eol=lf
+*.txt text eol=lf
+
+# Ignore binary diffs for images and archives
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.zip binary
+*.tar binary
+*.gz binary

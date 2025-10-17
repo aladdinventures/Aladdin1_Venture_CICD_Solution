@@ -1,0 +1,63 @@
+
+name: 🔁 Auto Release & Version Tag
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install -r youtube_automation_v3/requirements.txt || true
+
+      - name: Create version tag
+        id: versioning
+        run: |
+          VERSION_FILE="VERSION"
+          if [ ! -f "$VERSION_FILE" ]; then
+            echo "v3.0.0" > $VERSION_FILE
+          fi
+          VERSION=$(cat $VERSION_FILE)
+          echo "Current version: $VERSION"
+
+          NEW_VERSION=$(echo $VERSION | awk -F. -v OFS=. '{$NF += 1 ; print}')
+          echo "New version: $NEW_VERSION"
+          echo "$NEW_VERSION" > $VERSION_FILE
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Commit and push new version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add VERSION
+          git commit -m "🔖 Auto bump version to ${{ steps.versioning.outputs.version }}" || echo "No changes"
+          git tag -a ${{ steps.versioning.outputs.version }} -m "Release ${{ steps.versioning.outputs.version }}"
+          git push origin main --tags
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.versioning.outputs.version }}
+          name: "YouTube Automation System ${{ steps.versioning.outputs.version }}"
+          body: |
+            Automated release for YouTube Automation System.
+            Version: ${{ steps.versioning.outputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
