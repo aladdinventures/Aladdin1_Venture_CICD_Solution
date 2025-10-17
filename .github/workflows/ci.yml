@@ -1,0 +1,243 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'shared/**'
+      - 'core/**'
+      - 'infra/**'
+      - 'docker/**'
+      - 'config/**'
+      - '.github/workflows/ci.yml'
+      - 'scripts/detect_changes.py'
+  pull_request:
+    branches:
+      - main
+      - develop
+    types:
+      - opened
+      - synchronize
+      - reopened
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'shared/**'
+      - 'core/**'
+      - 'infra/**'
+      - 'docker/**'
+      - 'config/**'
+      - '.github/workflows/ci.yml'
+      - 'scripts/detect_changes.py'
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      affected_projects: ${{ steps.changes.outputs.affected_projects }}
+      ai_summary: ${{ steps.ai_validate.outputs.AI_OUTPUT }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required for monorepo change detection
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Detect Changed Projects
+        id: changes
+        run: python scripts/detect_changes.py
+
+      - name: AI Validate Commit/PR
+        id: ai_validate
+        run: |
+          COMMIT_MESSAGE=$(git log -1 --pretty=%B)
+          AI_OUTPUT=$(python ai-tools/ai_validate.py "$COMMIT_MESSAGE")
+          echo "AI_OUTPUT=$AI_OUTPUT" >> $GITHUB_OUTPUT
+        shell: bash
+
+  build-test-lint:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: ${{ fromJson(needs.detect-changes.outputs.affected_projects) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js (for frontend/shared packages)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Python (for backend/AI agent)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Monorepo Dependencies
+        run: |
+          npm install -g pnpm # Assuming pnpm is used for monorepo management
+          pnpm install
+
+      - name: Run Linting and Tests for ${{ matrix.project }}
+        run: |
+          echo "Running linting and tests for ${{ matrix.project }}..."
+          # Determine project type and run appropriate commands
+          if [[ "${{ matrix.project }}" == apps/frontend* ]]; then
+            echo "Running frontend lint and tests..."
+            # cd ${{ matrix.project }} && npm install && npm run lint && npm test
+          elif [[ "${{ matrix.project }}" == apps/backend* ]]; then
+            echo "Running backend lint and tests..."
+            # cd ${{ matrix.project }} && pip install -r requirements.txt && flake8 . && pytest
+          elif [[ "${{ matrix.project }}" == packages/* ]]; then
+            echo "Running package lint and tests..."
+            # cd ${{ matrix.project }} && pnpm test
+          else
+            echo "No specific lint/test commands for ${{ matrix.project }}. Skipping."
+          fi
+
+      - name: Build Docker Images for ${{ matrix.project }} (if applicable)
+        run: |
+          echo "Building Docker images for ${{ matrix.project }}..."
+          if [[ "${{ matrix.project }}" == apps/backend* ]]; then
+            echo "Building backend Docker image for ${{ matrix.project }}..."
+            # docker build -t ${{ matrix.project }}:latest ./${{ matrix.project }}
+          elif [[ "${{ matrix.project }}" == apps/ai-agent* ]]; then
+            echo "Building AI agent Docker image for ${{ matrix.project }}..."
+            # docker build -t ${{ matrix.project }}:latest ./${{ matrix.project }}
+          else
+            echo "No Docker build for ${{ matrix.project }}. Skipping."
+          fi
+
+      - name: Upload Artifacts for ${{ matrix.project }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-${{ matrix.project | replace('/', '-') }}
+          path: |
+            # Specify paths to your build artifacts here based on project type
+            # e.g., ./${{ matrix.project }}/dist
+            # e.g., docker images (needs to be pushed to a registry)
+          retention-days: 1
+
+  security-scan:
+    needs: build-test-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run SAST Scan (Placeholder)
+        run: |
+          echo "Running Static Application Security Testing (SAST) scan..."
+          # Integrate SAST tools here, e.g., Snyk, SonarQube, Bandit for Python
+
+      - name: Run Dependency Scan (Placeholder)
+        run: |
+          echo "Running Dependency Vulnerability Scan..."
+          # Integrate dependency scanning tools here, e.g., Snyk, Dependabot (built-in)
+
+      - name: Docker Image Vulnerability Scan (Placeholder)
+        run: |
+          echo "Running Docker Image Vulnerability Scan..."
+          # If Docker images were built, pull them and scan, e.g., Trivy, Clair"
+
+  build-test-lint:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: ${{ fromJson(needs.detect-changes.outputs.affected_projects) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js (for frontend/shared packages)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Python (for backend/AI agent)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Monorepo Dependencies
+        run: |
+          npm install -g pnpm # Assuming pnpm is used for monorepo management
+          pnpm install
+
+      - name: Run Linting and Tests for ${{ matrix.project }}
+        run: |
+          echo "Running linting and tests for ${{ matrix.project }}..."
+          # Determine project type and run appropriate commands
+          if [[ "${{ matrix.project }}" == apps/frontend* ]]; then
+            echo "Running frontend lint and tests..."
+            # cd ${{ matrix.project }} && npm install && npm run lint && npm test
+          elif [[ "${{ matrix.project }}" == apps/backend* ]]; then
+            echo "Running backend lint and tests..."
+            # cd ${{ matrix.project }} && pip install -r requirements.txt && flake8 . && pytest
+          elif [[ "${{ matrix.project }}" == packages/* ]]; then
+            echo "Running package lint and tests..."
+            # cd ${{ matrix.project }} && pnpm test
+          else
+            echo "No specific lint/test commands for ${{ matrix.project }}. Skipping."
+          fi
+
+      - name: Build Docker Images for ${{ matrix.project }} (if applicable)
+        run: |
+          echo "Building Docker images for ${{ matrix.project }}..."
+          if [[ "${{ matrix.project }}" == apps/backend* ]]; then
+            echo "Building backend Docker image for ${{ matrix.project }}..."
+            # docker build -t ${{ matrix.project }}:latest ./${{ matrix.project }}
+          elif [[ "${{ matrix.project }}" == apps/ai-agent* ]]; then
+            echo "Building AI agent Docker image for ${{ matrix.project }}..."
+            # docker build -t ${{ matrix.project }}:latest ./${{ matrix.project }}
+          else
+            echo "No Docker build for ${{ matrix.project }}. Skipping."
+          fi
+
+      - name: Upload Artifacts for ${{ matrix.project }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-${{ matrix.project | replace('/', '-') }}
+          path: |
+            # Specify paths to your build artifacts here based on project type
+            # e.g., ./${{ matrix.project }}/dist
+            # e.g., docker images (needs to be pushed to a registry)
+          retention-days: 1
+
+  security-scan:
+    needs: build-test-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run SAST Scan (Placeholder)
+        run: |
+          echo "Running Static Application Security Testing (SAST) scan..."
+          # Integrate SAST tools here, e.g., Snyk, SonarQube, Bandit for Python
+
+      - name: Run Dependency Scan (Placeholder)
+        run: |
+          echo "Running Dependency Vulnerability Scan..."
+          # Integrate dependency scanning tools here, e.g., Snyk, Dependabot (built-in)
+
+      - name: Docker Image Vulnerability Scan (Placeholder)
+        run: |
+          echo "Running Docker Image Vulnerability Scan..."
+          # If Docker images were built, pull them and scan, e.g., Trivy, Clair
+

@@ -1,0 +1,77 @@
+name: Continuous Delivery - Staging
+
+on:
+  workflow_call:
+    inputs:
+      ai_summary:
+        type: string
+        required: false
+        description: "AI-generated summary of the changes"
+  workflow_run:
+    workflows: ["Continuous Integration"]
+    types: [completed]
+    branches:
+      - main
+      - develop
+
+env:
+  AWS_REGION: us-east-1 # Example AWS region
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.example.com # Placeholder for staging URL
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      (github.event.workflow_run.head_branch == 'develop' || github.event.workflow_run.head_branch == 'main')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          # path: ./artifacts # If artifacts were uploaded to a specific path
+
+      - name: Deploy to Staging Environment (Placeholder)
+        run: |
+          echo "Deploying to staging environment..."
+          # To validate: Confirm that the application is successfully deployed to the staging environment.
+          # Verify that smoke tests pass and E2E tests execute without errors.
+          # This step would involve specific deployment commands for each service.
+          # Examples:
+          # - For Docker images: push to ECR, update ECS service or Kubernetes deployment.
+          # - For frontend: upload to S3/CloudFront.
+          # - For serverless: deploy using Serverless Framework or SAM CLI.
+          # Example: Deploying a Docker image to ECS
+          # aws ecs update-service --cluster my-staging-cluster --service my-staging-service --force-new-deployment
+
+      - name: Run Smoke Tests on Staging (Placeholder)
+        run: |
+          echo "Running smoke tests on staging..."
+          # curl -f https://staging.example.com/health || exit 1
+
+      - name: Run E2E Tests on Staging (Placeholder)
+        run: |
+          echo "Running E2E tests on staging..."
+          # pnpm nx e2e my-frontend-e2e --baseUrl=https://staging.example.com
+
+      - name: Send Slack Notification (Placeholder)
+        if: always()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_CHANNEL: '#devops-alerts'
+          SLACK_MESSAGE: 'Staging deployment for ${{ github.event.workflow_run.head_branch }} branch ${{ github.event.workflow_run.conclusion }} (Workflow: ${{ github.workflow }})\nAI Summary: ${{ inputs.ai_summary }}'
+          SLACK_COLOR: ${{ job.status == 'success' && 'good' || 'danger' }}
+

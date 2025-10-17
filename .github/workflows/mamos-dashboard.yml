@@ -1,0 +1,119 @@
+name: MAMOS Dashboard CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/mamos-dashboard/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mamos-dashboard/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Python and dependencies
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install pyyaml
+        run: pip install pyyaml
+      - name: Validate project name and secrets
+        run: python infra/ci-cd/validate_project.py mamos-dashboard
+
+  build-and-test:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: apps/mamos-dashboard
+
+      - name: Build project
+        run: npm run build
+        working-directory: apps/mamos-dashboard
+
+      - name: Run MAMOS Test Automation for MAMOS Dashboard
+        run: python infra/ci-cd/mamos_runner.py --project mamos-dashboard
+        working-directory: ./
+
+  deploy-test:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment:
+      name: Test
+      url: https://test.mamos-dashboard.aladdin.com
+    steps:
+      - name: Deploy to Test environment
+        run: python infra/ci-cd/mamos_runner.py --project mamos-dashboard --deploy-env Test
+        working-directory: ./
+        env:
+          RENDER_MAMOS_DASHBOARD_TEST_API_KEY: ${{ secrets.RENDER_MAMOS_DASHBOARD_TEST_API_KEY }}
+
+  deploy-staging:
+    needs: deploy-test
+    runs-on: ubuntu-latest
+    environment:
+      name: Staging
+      url: https://staging.mamos-dashboard.aladdin.com
+    steps:
+      - name: Manual Approval Required for Staging Deployment
+        run: |
+          echo "********************************************************************************"
+          echo "* MANUAL APPROVAL REQUIRED: Deployment to Staging Environment.                 *"
+          echo "*                                                                              *"
+          echo "* Please review the changes and approve this deployment in the GitHub Actions  *"
+          echo "* interface. This ensures all prerequisites are met before proceeding.         *"
+          echo "*                                                                              *"
+          echo "* Prerequisites:                                                               *"
+          echo "* - All automated tests have passed.                                           *"
+          echo "* - Code review for the merged changes is complete.                            *"
+          echo "* - Necessary Render Service IDs and API Keys are configured for Staging.      *"
+          echo "********************************************************************************"
+
+      - name: Deploy to Staging environment
+        run: python infra/ci-cd/mamos_runner.py --project mamos-dashboard --deploy-env Staging
+        working-directory: ./
+        env:
+          RENDER_MAMOS_DASHBOARD_STAGING_API_KEY: ${{ secrets.RENDER_MAMOS_DASHBOARD_STAGING_API_KEY }}
+
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: https://production.mamos-dashboard.aladdin.com
+    steps:
+      - name: Manual Approval Required for Production Deployment
+        run: |
+          echo "********************************************************************************"
+          echo "* MANUAL APPROVAL REQUIRED: Deployment to Production Environment.              *"
+          echo "*                                                                              *"
+          echo "* Please review the changes and approve this deployment in the GitHub Actions  *"
+          echo "* interface. This ensures all prerequisites are met before proceeding.         *"
+          echo "*                                                                              *"
+          echo "* Prerequisites:                                                               *"
+          echo "* - All automated tests have passed.                                           *"
+          echo "* - Code review for the merged changes is complete.                            *"
+          echo "* - Necessary Render Service IDs and API Keys are configured for Production.   *"
+          echo "* - Staging deployment has been successfully verified.                         *"
+          echo "********************************************************************************"
+
+      - name: Deploy to Production environment
+        run: python infra/ci-cd/mamos_runner.py --project mamos-dashboard --deploy-env Production
+        working-directory: ./
+        env:
+          RENDER_MAMOS_DASHBOARD_PRODUCTION_API_KEY: ${{ secrets.RENDER_MAMOS_DASHBOARD_PRODUCTION_API_KEY }}

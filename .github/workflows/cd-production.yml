@@ -1,0 +1,77 @@
+name: Continuous Deployment - Production
+
+on:
+  workflow_call:
+    inputs:
+      ai_summary:
+        type: string
+        required: false
+        description: "AI-generated summary of the changes"
+  workflow_dispatch: # Manual trigger
+    inputs:
+      version: 
+        description: 'Version to deploy (e.g., v1.0.0)'
+        required: true
+      environment: 
+        description: 'Deployment environment (e.g., production)'
+        required: true
+        default: 'production'
+  workflow_run:
+    workflows: ["Continuous Delivery - Staging"]
+    types: [completed]
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-1 # Example AWS region
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://app.aladdinventures.com # Placeholder for production URL
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          # path: ./artifacts # If artifacts were uploaded to a specific path
+
+      - name: Deploy to Production Environment (Placeholder)
+        run: |
+          echo "Deploying to production environment..."
+          # To validate: After deployment, verify that the application is live and functional in production.
+          # Monitor logs and metrics for any anomalies. Ensure rollback strategy is viable.
+          # This step would involve specific deployment commands for each service.
+          # Example: Deploying a Docker image to ECS with blue/green deployment
+          # aws ecs update-service --cluster my-prod-cluster --service my-prod-service --force-new-deployment
+
+      - name: Post-Deployment Verification (Placeholder)
+        run: |
+          echo "Running post-deployment verification..."
+          # Monitor application health and performance metrics
+          # Example: curl -f https://app.aladdinventures.com/health || exit 1
+
+      - name: Send Slack Notification (Placeholder)
+        if: always()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_CHANNEL: '#devops-alerts'
+          SLACK_MESSAGE: 'Production deployment for ${{ github.event.workflow_run.head_branch }} branch ${{ github.event.workflow_run.conclusion }} (Workflow: ${{ github.workflow }})\nAI Summary: ${{ inputs.ai_summary }}'
+          SLACK_COLOR: ${{ job.status == 'success' && 'good' || 'danger' }}
+

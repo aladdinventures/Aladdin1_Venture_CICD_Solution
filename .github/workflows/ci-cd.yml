@@ -1,0 +1,71 @@
+name: CI/CD Orchestrator
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'shared/**'
+      - 'core/**'
+      - 'infra/**'
+      - 'docker/**'
+      - 'config/**'
+      - '.github/workflows/ci-cd.yml'
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/cd-staging.yml'
+      - '.github/workflows/cd-production.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+    types:
+      - opened
+      - synchronize
+      - reopened
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'shared/**'
+      - 'core/**'
+      - 'infra/**'
+      - 'docker/**'
+      - 'config/**'
+      - '.github/workflows/ci-cd.yml'
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/cd-staging.yml'
+      - '.github/workflows/cd-production.yml'
+
+jobs:
+  # Job to trigger the CI workflow
+  trigger-ci:
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  # Job to trigger the CD Staging workflow
+  trigger-cd-staging:
+    needs: trigger-ci
+    uses: ./.github/workflows/cd-staging.yml
+    secrets: inherit
+    with:
+      ai_summary: ${{ needs.trigger-ci.outputs.ai_summary }}
+    if: success()
+
+  # Job to trigger the CD Production workflow
+  trigger-cd-production:
+    needs: trigger-cd-staging
+    uses: ./.github/workflows/cd-production.yml
+    secrets: inherit
+    with:
+      ai_summary: ${{ needs.trigger-ci.outputs.ai_summary }}
+    if: success() && github.ref == 'refs/heads/main' # This job will require manual approval in the production environment settings
+
+  # Job to trigger the Release Management workflow
+  trigger-release:
+    needs: trigger-ci # Release can be triggered by CI success on main
+    uses: ./.github/workflows/release.yml
+    secrets: inherit
+    if: success() && github.ref == 'refs/heads/main'
+

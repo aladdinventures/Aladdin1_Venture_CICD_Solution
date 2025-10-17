@@ -1,0 +1,33 @@
+{
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "numReplicas": 1,
+    "healthcheckPath": "/healthz",
+    "restartPolicy": {
+      "maxRetries": 3
+    }
+  },
+  "environment": {
+    "PORT": "8000",
+    "DATABASE_URL": "${{Railway.Postgres.URL}}"
+  },
+  "services": [
+    {
+      "name": "backend-nest",
+      "repo": "aladdinventures/aladdin-sandbox",
+      "path": "/apps/backend-nest",
+      "buildCommand": "npm install && npm run build",
+      "startCommand": "npm run start:prod"
+    },
+    {
+      "name": "frontend-next",
+      "repo": "aladdinventures/aladdin-sandbox",
+      "path": "/apps/frontend-next",
+      "buildCommand": "npm install && npm run build",
+      "startCommand": "npm run start"
+    }
+  ]
+}
+

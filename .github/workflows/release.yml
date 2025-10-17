@@ -1,0 +1,81 @@
+name: Release Management
+
+on:
+  workflow_call:
+    inputs:
+      ai_summary:
+        type: string
+        required: false
+        description: "AI-generated summary of the changes"
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'shared/**'
+      - 'core/**'
+      - 'infra/**'
+      - 'docker/**'
+      - 'config/**'
+      - '.github/workflows/release.yml'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required to create releases and push tags
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required for semantic-release to analyze history
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Monorepo Dependencies
+        run: |
+          npm install -g pnpm
+          pnpm install
+
+      - name: Configure Git User
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Semantic Release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          extra_plugins: |
+            @semantic-release/changelog
+            @semantic-release/git
+            @semantic-release/github
+          branches: |
+            ['main', {name: 'develop', prerelease: true}]
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Documentation (if new version released)
+        if: steps.semantic.outputs.new_release_published == 'true'
+        run: |
+          echo "New release published: ${{ steps.semantic.outputs.new_release_version }}"
+          # Placeholder for documentation generation/update
+          # For example, if you have an OpenAPI spec, you could generate client SDKs here.
+          # Or update a 'latest_version.md' file.
+          # git add docs/
+          # git commit -m "docs: update version to ${{ steps.semantic.outputs.new_release_version }}" || echo "No changes to commit"
+          # git push
+
+      - name: Send Slack Notification (if new version released)
+        if: steps.semantic.outputs.new_release_published == 'true' && success()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_CHANNEL: '#releases'
+          SLACK_MESSAGE: 'New release published: ${{ steps.semantic.outputs.new_release_version }} - ${{ steps.semantic.outputs.new_release_notes }}\nAI Summary: ${{ inputs.ai_summary }}'
+          SLACK_COLOR: 'good'
+
